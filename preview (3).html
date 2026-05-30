@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
 <style>
+
 *{
     margin:0;
     padding:0;
@@ -86,6 +87,28 @@ body{
 .songList{
     overflow-y:auto;
     height:calc(100vh - 140px);
+    padding-right:8px;
+}
+
+/* COOL SCROLLBAR */
+
+.songList::-webkit-scrollbar{
+    width:12px;
+}
+
+.songList::-webkit-scrollbar-track{
+    background:rgba(255,255,255,.05);
+    border-radius:999px;
+}
+
+.songList::-webkit-scrollbar-thumb{
+    background:linear-gradient(#00ff88,#00b7ff);
+    border-radius:999px;
+    box-shadow:0 0 15px #00ff88;
+}
+
+.songList::-webkit-scrollbar-thumb:hover{
+    background:linear-gradient(#00b7ff,#00ff88);
 }
 
 .song{
@@ -186,26 +209,45 @@ body{
     font-weight:700;
 }
 
+/* BETTER PROGRESS BAR */
+
 .progressContainer{
     width:80%;
     max-width:650px;
-    height:10px;
-    background:rgba(255,255,255,.1);
+    height:14px;
+    background:rgba(255,255,255,.08);
     border-radius:999px;
-    overflow:hidden;
+    overflow:visible;
     margin-top:35px;
+    cursor:pointer;
+    position:relative;
 }
 
 .progress{
     width:0%;
     height:100%;
+    border-radius:999px;
     background:linear-gradient(90deg,#00ff88,#00b7ff);
+    box-shadow:0 0 20px rgba(0,255,136,.7);
+}
+
+.progressThumb{
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    background:white;
+    position:absolute;
+    top:50%;
+    left:0%;
+    transform:translate(-50%,-50%);
+    box-shadow:0 0 20px #00ff88;
 }
 
 .time{
     margin-top:12px;
     color:#9ca3af;
 }
+
 </style>
 </head>
 
@@ -236,10 +278,12 @@ body{
             <button class="controlBtn" id="prevBtn">⏮</button>
             <button class="controlBtn playBtn" id="playBtn">▶</button>
             <button class="controlBtn" id="nextBtn">⏭</button>
+            <button class="controlBtn" id="repeatBtn">🔁</button>
         </div>
 
-        <div class="progressContainer">
+        <div class="progressContainer" id="progressContainer">
             <div class="progress" id="progress"></div>
+            <div class="progressThumb" id="progressThumb"></div>
         </div>
 
         <div class="time" id="time">0:00 / 0:00</div>
@@ -250,7 +294,9 @@ body{
 <audio id="audio"></audio>
 
 <script>
-// 🌍 GLOBAL SONG LIST (EDIT THESE LINKS)
+
+// SONGS
+
 let songs = [
     {
         name: "Crazy Story",
@@ -267,27 +313,29 @@ let songs = [
         artist: "Lil Tecca",
         url: "https://ppkiwi-ppkiwigames.github.io/kiwirecords/Lil%20Tecca%20-%20Ransom%20(Lyrics).mp3"
     },
-        {
+    {
         name: "Billie Jean",
         artist: "Michael Jackson",
         url: "https://ppkiwi-ppkiwigames.github.io/kiwirecords/Michael%20Jackson%20-%20Billie%20Jean%20(Official%20Video).mp3"
     },
-            {
+    {
         name: "The Bottom 3",
         artist: "Glorb",
         url: "https://ppkiwi-ppkiwigames.github.io/kiwirecords/Glorb%20-%20The%20Bottom%203%20(Official%20Music%20Video).mp3"
     },
-            {
+    {
         name: "Gleesh Place",
         artist: "King Von",
         url: "https://ppkiwi-ppkiwigames.github.io/kiwirecords/King%20Von%20-%20Gleesh%20Place%20(Official%20Video).mp3"
     },
-            {
+    {
         name: "SAD! FUNK",
         artist: "MEMPHX",
         url: "https://ppkiwi-ppkiwigames.github.io/kiwirecords/MEMPHX,%20SEKIMANE%20-%20SAD!%20(FUNK).mp3"
     }
 ];
+
+// ELEMENTS
 
 const songList = document.getElementById("songList");
 const audio = document.getElementById("audio");
@@ -295,15 +343,24 @@ const title = document.getElementById("title");
 const artist = document.getElementById("artist");
 const playBtn = document.getElementById("playBtn");
 const progress = document.getElementById("progress");
+const progressContainer = document.getElementById("progressContainer");
+const progressThumb = document.getElementById("progressThumb");
 const time = document.getElementById("time");
+const repeatBtn = document.getElementById("repeatBtn");
 
 let currentSong = 0;
+let repeatMode = false;
+
+// RENDER SONGS
 
 function renderSongs(){
+
     songList.innerHTML = "";
 
     songs.forEach((song, index) => {
+
         const div = document.createElement("div");
+
         div.className = "song";
         div.id = "song-" + index;
 
@@ -313,8 +370,11 @@ function renderSongs(){
         `;
 
         div.onclick = () => {
+
             currentSong = index;
+
             loadSong(index);
+
             playSong();
         };
 
@@ -322,66 +382,173 @@ function renderSongs(){
     });
 }
 
+// LOAD SONG
+
 function loadSong(index){
+
     const song = songs[index];
+
     if(!song) return;
 
     audio.src = song.url;
+
     title.textContent = song.name;
     artist.textContent = song.artist;
 
-    document.querySelectorAll(".song").forEach(s => s.classList.remove("active"));
+    document
+        .querySelectorAll(".song")
+        .forEach(s => s.classList.remove("active"));
+
     const el = document.getElementById("song-" + index);
+
     if(el) el.classList.add("active");
 }
 
+// PLAY SONG
+
 function playSong(){
-    audio.play();
+
+    audio.play().catch(err => {
+        console.log(err);
+    });
+
     playBtn.textContent = "⏸";
 }
 
+// PAUSE SONG
+
 function pauseSong(){
+
     audio.pause();
+
     playBtn.textContent = "▶";
 }
 
+// PLAY BUTTON
+
 playBtn.onclick = () => {
-    if(audio.paused) playSong();
-    else pauseSong();
+
+    if(audio.paused){
+        playSong();
+    }else{
+        pauseSong();
+    }
 };
+
+// NEXT BUTTON
 
 document.getElementById("nextBtn").onclick = () => {
+
     currentSong = (currentSong + 1) % songs.length;
+
     loadSong(currentSong);
+
     playSong();
 };
+
+// PREVIOUS BUTTON
 
 document.getElementById("prevBtn").onclick = () => {
-    currentSong = (currentSong - 1 + songs.length) % songs.length;
+
+    currentSong =
+        (currentSong - 1 + songs.length) % songs.length;
+
     loadSong(currentSong);
+
     playSong();
 };
 
+// REPEAT BUTTON
+
+repeatBtn.onclick = () => {
+
+    repeatMode = !repeatMode;
+
+    if(repeatMode){
+
+        repeatBtn.style.background =
+            "linear-gradient(90deg,#00ff88,#00b7ff)";
+
+        repeatBtn.style.color = "black";
+
+    }else{
+
+        repeatBtn.style.background =
+            "rgba(255,255,255,0.08)";
+
+        repeatBtn.style.color = "white";
+    }
+};
+
+// PROGRESS UPDATE
+
 audio.addEventListener("timeupdate", () => {
-    progress.style.width = (audio.currentTime / audio.duration) * 100 + "%";
+
+    if(!audio.duration) return;
+
+    const percent =
+        (audio.currentTime / audio.duration) * 100;
+
+    progress.style.width = percent + "%";
+
+    progressThumb.style.left = percent + "%";
+
     time.textContent =
         `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
 });
 
+// SEEK BAR
+
+progressContainer.addEventListener("click", (e) => {
+
+    if(!audio.duration) return;
+
+    const rect =
+        progressContainer.getBoundingClientRect();
+
+    const percent =
+        (e.clientX - rect.left) / rect.width;
+
+    audio.currentTime =
+        percent * audio.duration;
+});
+
+// SONG ENDED
+
 audio.addEventListener("ended", () => {
-    currentSong = (currentSong + 1) % songs.length;
+
+    if(repeatMode){
+
+        audio.currentTime = 0;
+
+        playSong();
+
+        return;
+    }
+
+    currentSong =
+        (currentSong + 1) % songs.length;
+
     loadSong(currentSong);
+
     playSong();
 });
 
+// FORMAT TIME
+
 function formatTime(s){
+
     if(isNaN(s)) return "0:00";
+
     return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,"0")}`;
 }
 
 // INIT
+
 renderSongs();
+
 loadSong(0);
+
 </script>
 
 </body>
